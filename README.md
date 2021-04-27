@@ -166,3 +166,130 @@ Example: Open python and try this
 Now apply the `parse` to the `find_handler` method
 
 ### Duplicate routes and Class-based handlers
+Currently if you add mutiple routes, the framework will recognize and will not throw out an error but rather return the last route.
+Take the two routes and handlers as an example:
+
+    @app.route('/about')
+    def about(request, response):
+        response.text = "This is First About page"
+
+    @app.route('/about')
+    def about2(request, response):
+        response.text = "This is Second About page"
+
+The above two routes all have the same route name but with different content. So if you go to `http://localhost/about`, guess which response will be displayed? The the second handler, `about2` will be served. The framework will not not complain which is problematic. 
+
+### The new solution: resolving routing duplicates
+We want to do the following
+1. First check if the route exists and throw an excepting that it already exists if the user tries to add a duplicate route handler. Using python dict will easily help us check if a given path already exists in the dictionary. 
+2. If the route doesn't exist, then we can add it to our route dictionary. 
+
+    Solution: Change the `route` method so that it throws an exception if an existing route is being added again. 
+
+    def route(self, path):
+        if path in self.routes:
+            raise AssertionError("Such route already exists.")
+            
+        def wrapper(handler):
+            self.routes[path] = handler
+            return handler
+        return wrapper
+
+Or we can refactor the code to look like this:
+
+    def route(self, path):
+        assert path not in self.routes, "Such route already exists." # new
+            
+        def wrapper(handler):
+            self.routes[path] = handler
+            return handler
+        return wrapper
+
+### Classe-based Handlers
+Class based handlers are cooler and elegant for larger projects to maintain. Let's create one `class-based handler`
+
+Now, after adding  `class based handlers`. We need to go to the `handler_request` method and check to see if the handler is a `function based handler` and serve it as such or if it's `class based handler` depending on the request method, if `GET` we call the `get()` method of the class and if request method is `POST`, we call the `post()` method of the class. 
+If the handler is a class based handler, we can use the built-in `inspect` module to check it first before.
+
+Our `handle_request` method now looks like this:
+
+    def handle_request(self, request):
+        response = Response()
+
+        handler, kwargs = self.find_handler(request_path=request.path)
+
+        # New
+        if handler is not None:     
+            if inspect.isclass(handler):
+                pass # class-based handler here
+            else:
+                handler(request, response, **kwargs)
+        else:
+            self.default_response(response)
+
+        return response
+
+Most important thing: if a classed-based handler is used, it is important to know and find the appropriate method of the class based on the given request method. Is it `GET` or `POST`. The built-in `getattr` function can be used to find the request method of the class based handler.
+
+Now refactoring the `handler_request` method:
+
+    if inspect.isclass(handler):
+        handler_function = getattr(handler(), request.method.lower(), None)
+        pass
+
+`getattr()`: 
+    1. accepts an object instance as first parameter
+    2. accepts the attribute name as second parameter
+    3. the third argument is the value to return if nothing is found
+
+Therefore, `GET` will return get, `POST` will return post. `random_attribute` will return `None`. If the `handler_function` is `None`, it means such function was not implemented in the class and the request method is not allowed. If the `handler_function` is not None, then call it
+
+    if inspect.isclass(handler):
+        handler_function = getattr(handler(), request.method.lower(), None)
+        if handler_function is None:
+            raise AttributeError("Method not allowed", request.method)
+        handler_function(request, response, **kwargs)
+
+Now we can combine the `handler_function` with the `handler` to have a clear code.
+
+Old code:   
+
+    def handle_request(self, request):
+        response = Response()
+
+        handler, kwargs = self.find_handler(request_path=request.path)
+
+        if handler is not None:
+            if inspect.isclass(handler):
+                handler_function = getattr(handler(), request.method.lower(), None)
+                if handler_function is None:
+                    raise AttributeError("Method not allowed", request.method)
+                handler_function(request, response, **kwargs)
+            else:
+                handler(request, response, **kwargs)
+        else:
+            self.default_response(response)
+
+        return response
+
+Refactored code:
+
+    def handle_request(self, request):
+        response = Response()
+
+        handler, kwargs = self.find_handler(request_path=request.path)
+
+        if handler is not None:
+            if inspect.isclass(handler):
+                handler = getattr(handler(), request.method.lower(), None)
+                if handler is None:
+                    raise AttributeError("Method not allowed", request.method)
+            handler(request, response, **kwargs)
+        else:
+            self.default_response(response)
+
+        return response
+
+You can test the class based handler by going to: `http://localhost:800/book`. You will get the page with the message `Books Page`
+
+You can test the class based handler for the `POST` method by this on the console: `curl -X POST http://localhost:8999/book`. You will get the page with the message `Endpoint to create a book`
