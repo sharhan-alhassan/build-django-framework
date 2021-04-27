@@ -11,3 +11,11 @@ def home(request, response):
 @app.route('/about')
 def about(resquest, response):
     response.text = "Hello from the ABOUT page"
+
+@app.route('/about/{name}')
+def greeting(request, response, name):
+    response.text = f"Hello, {name}"
+
+@app.route('/tell/{age:d}')
+def get_age(request, response, age):
+    response.text = f"I am {age} years old"

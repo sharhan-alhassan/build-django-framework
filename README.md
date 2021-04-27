@@ -104,7 +104,23 @@ In the `__init__` method, you define a `dict` and called `self.routes` where the
 
 The in the  `route` method, you take a path as an argument and in the `wrapper` method, you add this path in the `self.routes` dictionary as a key and the handler as a value
 
-After creating your routes and associating them with the needed handlers, you would realized that if you make a request to a non-existing route, you'll get a: `Internal Server Erro`. Back in the console you'll get a message like: `TypeErro: 'NoneType' object is not callable`.
+### What are handlers in Python?
+Handlers take the general form of function:
+
+    handler(request, response):
+        ...
+
+Basically, they are functions that handle certain events that they are registered for. [github answer](https://stackoverflow.com/questions/58628653/what-are-handlers-in-python-in-plain-english)
+
+They are functions that are called when certain events happen
+
+    @app.route('/home')
+    def home(request, response):
+        reponse.text = "Hello, World"
+    
+`home` function is a handler that gives the message `Hello World` when the url `/home` is called. 
+
+After creating your routes and associating them with the necessary handlers, you would realized that if you make a request to a non-existing route, you'll get a: `Internal Server Erro`. Back in the console you'll get a message like: `TypeError: 'NoneType' object is not callable`.
 
 Let's create a method that returns a simple `HTTP response` of `Not Found` with a `404 status` code:
 
@@ -127,3 +143,20 @@ Add this piece of code to the `handle_request` method:
                     return response
             self.default_response(response)
             return response 
+
+
+### Parameterized
+This is to say to add additional parameters to the route. Eg; something like `/home/{your_name}/`. An extra parameter of `your_name` can be taken. There's a package called [Parse](https://pypi.org/project/parse/). It is the opposite of `format()`
+
+Example: Open python and try this
+
+    >>> from parse import parse
+    >>> result = parse("Hello {name}", "Hello, Sam")
+    >>> print(result.named)
+    {'name': 'Sam'}
+
+`Hello, Sam` was able to identify that `Sam` corresponds to the provided `{name}`
+
+Now apply the `parse` to the `find_handler` method
+
+### Duplicate routes and Class-based handlers
