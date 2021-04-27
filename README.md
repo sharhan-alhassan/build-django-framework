@@ -15,9 +15,11 @@ The above is problematic. Waking the PythonApp up and sending requests for respo
 
 ### WSGI to the Rescue:
 `WSGI:` Is basically a set of rules on how a Web Server should/communicate with an Application
+
     client -> Web Server -> WSGI -> PythonApp
 
-According to PEP [PEP 333](https://www.python.org/dev/peps/pep-0333/#the-application-framework-side), the document that specifies the details of `WSGI`, the `application interface` is implemented as a callable object such as a function, a method, a class or an instance with a `__call__` method. This object takes `2 positional arguments` and return the `response body` as strings in an iterable. The two arguments are:
+According to [PEP 333](https://www.python.org/dev/peps/pep-0333/#the-application-framework-side), the document that specifies the details of `WSGI`, the `application interface` is implemented as a callable object such as a function, a method, a class or an instance with a `__call__` method. This object takes `2 positional arguments` and return the `response body` as strings in an iterable. The two arguments are:
+
     1. A `dictionary with environment variables` 
     2. A callback function that will be used to send HTTP statuses and HTTP headers to the server
 
@@ -34,6 +36,7 @@ The only thing to note is that while the postman is delivering the request/respo
 
 ## Requests and Routing
 The following will be built:
+
     1. The request handlers(think Django views)
     2. Routing -- both simple(like `/books/`) and parameterized (like `/books/{id}/`)
 
@@ -45,11 +48,11 @@ The following will be built:
 3. Create a file, `app.py`
 4. Create a simple web
 
-    def app(environ, start_response):
-        response_body = b"Hello, World"
-        status = '200 OK'
-        start_response(status, headers=[])
-        return iter([response_body])
+        def app(environ, start_response):
+            response_body = b"Hello, World"
+            status = '200 OK'
+            start_response(status, headers=[])
+            return iter([response_body])
 
 5. Install gunicorn: `pip install gunicorn`
 6. Start/run the app: `gunicorn app:app`
@@ -110,7 +113,7 @@ Handlers take the general form of function:
     handler(request, response):
         ...
 
-Basically, they are functions that handle certain events that they are registered for. [github answer](https://stackoverflow.com/questions/58628653/what-are-handlers-in-python-in-plain-english)
+Basically, they are functions that handle certain events that they are registered for [github answer](https://stackoverflow.com/questions/58628653/what-are-handlers-in-python-in-plain-english)
 
 They are functions that are called when certain events happen
 
