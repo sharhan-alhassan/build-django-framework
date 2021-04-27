@@ -1,12 +1,15 @@
 
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
 
 ## Building Python Web Framework
 ## Part 1:
 [Reference Material: From testdriven.io](https://testdriven.io/payments/python-web-framework/)
 
 1. ### WSGI - Web Server Gateway Interface
-The **Web Serber:**
+The **Web Server:**
 Serving clients requests as responses. WS takes requets, send it the pythonApp, 'hey dude, a client needs this info'. Takes it and serves the client as response. WS knows nothing about the content or anything else.
+
     Client - Web Server - PythonApp
 
 The **Web App** only exists at execution time and goes back to the sleep. Anytime there's a client's request, the Web Server wakes the Web App up and ask for the response to the request, the Web App performs its execution, serves the response and goes back to sleep
