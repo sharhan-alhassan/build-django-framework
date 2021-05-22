@@ -1,6 +1,28 @@
 
 import pytest
+from api import API
 
+def test_custom_exeption_handler(api, client):
+    def on_exception(req, resp, exc):
+        resp.text = "AttributeErrorHappend"
+
+    api.add_exception_handler(on_exception)
+
+def test_template(api, client):
+    @api.route("/html")
+    def html_handler(req, resp):
+        resp.body = api.template(
+            "index.html", 
+            context={"title": "Some Title", "name": "Some Name"}
+        ).encode()
+
+        response = client.get("http://testserver/html")
+
+        assert "text/html" in response.headers["Content-Type"]
+        assert "Some Title" in response.text
+        assert "Some Name" in response.text
+
+        
 def test_basic_route_adding(api):
     @api.route('/home')
     def home(req, resp):

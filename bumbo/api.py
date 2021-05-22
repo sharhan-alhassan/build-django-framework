@@ -1,30 +1,55 @@
 # api.py
 
+import os
+from jinja2 import Environment, FileSystemLoader
+
 import inspect
 
 from webob import Request, Response
 from parse import parse
 from requests import Session as RequestsSession
+from webob.etag import NoETag
 from wsgiadapter import WSGIAdapter as RequestsWSGIAdapter
 
 class API:
-    def __init__(self):
+    def __init__(self, templates_dir="templates"):
         self.routes = {}
 
-    def route(self, path):
-        if path in self.routes:
-            raise AssertionError("Such route already exists.")
+        self.templates_env = Environment(
+            loader=FileSystemLoader(os.path.abspath(templates_dir))
+        )
 
-        def wrapper(handler):
-            self.routes[path] = handler
-            return handler
-        return wrapper
+        # variable for exception handler
+        self.exception_handler = None
+
+    # exception handler method
+    def add_exception_handler(self, exception_handler):
+        self.exception_handler = exception_handler
+
+    def template(self, template_name, context=None):
+        if context is None:
+            context = {}
+
+        return self.templates_env.get_template(template_name).render(**context)
+
 
     def __call__(self, environ, start_response):
         request = Request(environ)
 
         response = self.handle_request(request)
         return response(environ, start_response)
+
+    def add_route(self, path, handler):
+        '''Adding a Django-like route'''
+        if path in self.routes:
+            raise AssertionError("Such route already exists.")
+        self.routes[path] = handler
+
+    def route(self, path):
+        def wrapper(handler):
+            self.add_route(path, handler)
+            return handler
+        return wrapper
 
     def find_handler(self, request_path):
         for path, handler in self.routes.items():
@@ -33,21 +58,32 @@ class API:
                 return handler, parse_result.named
         return None, None
 
+
+
     def handle_request(self, request):
         response = Response()
 
         handler, kwargs = self.find_handler(request_path=request.path)
 
-        if handler is not None:
-            if inspect.isclass(handler):
-                handler = getattr(handler(), request.method.lower(), None)
-                if handler is None:
-                    raise AttributeError("Method not allowed", request.method)
-            handler(request, response, **kwargs)
-        else:
-            self.default_response(response)
+        try:
+            if handler is not None:
+                if inspect.isclass(handler):
+                    handler = getattr(handler(), request.method.lower(), None)
+                    if handler is None:
+                        raise AttributeError("Method not allowed", request.method)
+                handler(request, response, **kwargs)
+            else:
+                self.default_response(response)
+
+        except Exception as e:
+            if self.exception_handler is None:
+                raise e
+            else:
+                self.exception_handler(request, response, e)
 
         return response
+
+        
          
     def default_response(self, response):
         response.status_code = 404
@@ -57,6 +93,7 @@ class API:
         session = RequestsSession()
         session.mount(prefix=base_url, adapter=RequestsWSGIAdapter(self))
         return session
+
 
 
 
