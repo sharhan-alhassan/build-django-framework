@@ -126,7 +126,7 @@ They are functions that are called when certain events happen
     
 `home` function is a handler that gives the message `Hello World` when the url `/home` is called. 
 
-After creating your routes and associating them with the necessary handlers, you would realized that if you make a request to a non-existing route, you'll get a: `Internal Server Erro`. Back in the console you'll get a message like: `TypeError: 'NoneType' object is not callable`.
+After creating your routes and associating them with the necessary handlers, you would realized that if you make a request to a non-existing route, you'll get a: `Internal Server Error`. Back in the console you'll get a message like: `TypeError: 'NoneType' object is not callable`.
 
 Let's create a method that returns a simple `HTTP response` of `Not Found` with a `404 status` code:
 
@@ -293,3 +293,32 @@ Refactored code:
 You can test the class based handler by going to: `http://localhost:800/book`. You will get the page with the message `Books Page`
 
 You can test the class based handler for the `POST` method by this on the console: `curl -X POST http://localhost:8999/book`. You will get the page with the message `Endpoint to create a book`
+
+
+### Unit Tests
+We're going to introduce `unit tests` with `pytest` and add test client so we can start testing the endpoints. 
+
+Packages required for the `tests` section of this part
+
+    pip install pytest
+    pip install requests
+    pip install requests-wsgi-adapter
+    pip install pytest-cov
+
+### Test Client:
+This is a way of testing the API without spinning up a server. 
+
+### Test coverage
+
+- `pytest-cov`: pytest coverage is a measure used to describe the degree to which the `source code` of a program is executed when a particular `test suite` runs. High test coverage means, high lower chance of source code containing undetected `bugs`
+
+- Add `.coveragerc` file which is used for the configuration of the coverage tool to ignore the `venv virtual environment` directory along with the `test_bumbo.py`, `conftest.py` and `app.py` files. 
+
+- Put the following code in the `.coveragerc` file
+
+    [run]
+    omit = venv/*,test_bumbo.py,conftest.py,app.py
+
+- Run the command to run the tests coverage:
+
+`pytest --cov=. test_bumbo.py`

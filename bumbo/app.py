@@ -33,9 +33,9 @@ class BookResource:
 @app.route('/book/{id:d}/update')
 class PutBook:
     def put(self, req, resp, id):
-        resp.text = f"Book with id: {id} modified!"
+        resp.text = f"Book with id {id}: modified!"
 
 @app.route('/book/{id:d}/delete')
 class DeleteBook:
     def delete(self, req, resp, id):
-        resp.text = f"Book with id: {id} deleted!"
+        resp.text = f"Book with id {id}: deleted!"

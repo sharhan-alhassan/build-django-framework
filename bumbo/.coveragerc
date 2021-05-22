@@ -1,0 +1,4 @@
+
+
+[run]
+omit = venv/*,test_bumbo.py,conftest.py,app.py
