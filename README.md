@@ -8,7 +8,7 @@
 
 1. ### WSGI - Web Server Gateway Interface
 The **Web Server:**
-Serving clients requests as responses. WS takes requets, send it the pythonApp, 'hey dude, a client needs this info'. Takes it and serves the client as response. WS knows nothing about the content or anything else.
+Serving clients requests as responses. WS takes requets, send it to the pythonApp, 'hey dude, a client needs this info'. Takes it and serves the client as response. WS knows nothing about the content or anything else.
 
     Client - Web Server - PythonApp
 
@@ -290,9 +290,9 @@ Refactored code:
 
         return response
 
-You can test the class based handler by going to: `http://localhost:800/book`. You will get the page with the message `Books Page`
+You can test the class based handler by going to: `http://localhost:8000/book`. You will get the page with the message `Books Page`
 
-You can test the class based handler for the `POST` method by this on the console: `curl -X POST http://localhost:8999/book`. You will get the page with the message `Endpoint to create a book`
+You can test the class based handler for the `POST` method by this on the console: `curl -X POST http://localhost:8000/book`. You will get the page with the message `Endpoint to create a book`
 
 
 ### Unit Tests
@@ -322,3 +322,20 @@ This is a way of testing the API without spinning up a server.
 - Run the command to run the tests coverage:
 
 `pytest --cov=. test_bumbo.py`
+
+### Django-Like Routes and Templates
+
+
+### Jinja2
+Jinja2 uses a central object called the template `Environment`. You will configure this environment upon application initialization and load templates with the help of this environment.
+
+Here's an example of how to create and configure a new `Environment`:
+
+    import os 
+    from jinja2 import Environemnt, FileSystemLoader
+
+    template_env = Environment(loader=FileSystemLoader(os.path.abspath("templates")))
+
+-  In the `api.py` of the `template` method, you'd notice `context=None`.
+
+- This should be fairly straightforward, right? The only thing you may be wondering about is why I gave context a default value of None, checked if it is None, and then set the value to an empty dictionary, {}? Why not just give it a default value of {} in the declaration? Well, dict is a mutable object and it is a bad practice to set a mutable object as a default value in Python. You can read more about this [here](https://docs.python-guide.org/writing/gotchas/#mutable-default-arguments). This is an excellent, and frequently asked, interview question for Pythonistas.
