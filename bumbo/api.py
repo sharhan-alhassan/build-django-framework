@@ -5,37 +5,45 @@ from jinja2 import Environment, FileSystemLoader
 
 import inspect
 
-from webob import Request, Response
+from webob import Request, Response, request, response
 from parse import parse
 from requests import Session as RequestsSession
 from webob.etag import NoETag
 from wsgiadapter import WSGIAdapter as RequestsWSGIAdapter
+from whitenoise import WhiteNoise
+
+from middleware import Middleware
+
 
 class API:
-    def __init__(self, templates_dir="templates"):
+
+    def __init__(self, templates_dir="templates", static_dir="static"):
         self.routes = {}
 
         self.templates_env = Environment(
-            loader=FileSystemLoader(os.path.abspath(templates_dir))
-        )
+            loader=FileSystemLoader(os.path.abspath(templates_dir)))
 
         # variable for exception handler
         self.exception_handler = None
 
-    # exception handler method
-    def add_exception_handler(self, exception_handler):
-        self.exception_handler = exception_handler
-
-    def template(self, template_name, context=None):
-        if context is None:
-            context = {}
-
-        return self.templates_env.get_template(template_name).render(**context)
-
+        self.whitenoise = WhiteNoise(self.wsgi_app, root=static_dir)
+        self.middleware = Middleware(self)
 
     def __call__(self, environ, start_response):
-        request = Request(environ)
+        path_info = environ["PATH_INFO"]
 
+        if path_info.startswith("/static"):
+            environ["PATH_INFO"] = path_info[len("/static"):]
+            return self.whitenoise(environ, start_response)
+
+        return self.middleware(environ, start_response)
+
+        # request = Request(environ)
+        # response = self.handle_request(request)
+        # return response(environ, start_response)
+
+    def wsgi_app(self, environ, start_response):
+        request = Request(environ)
         response = self.handle_request(request)
         return response(environ, start_response)
 
@@ -45,11 +53,13 @@ class API:
             raise AssertionError("Such route already exists.")
         self.routes[path] = handler
 
+
     def route(self, path):
         def wrapper(handler):
             self.add_route(path, handler)
             return handler
         return wrapper
+
 
     def find_handler(self, request_path):
         for path, handler in self.routes.items():
@@ -57,7 +67,6 @@ class API:
             if parse_result is not None:
                 return handler, parse_result.named
         return None, None
-
 
 
     def handle_request(self, request):
@@ -83,11 +92,11 @@ class API:
 
         return response
 
-        
          
     def default_response(self, response):
         response.status_code = 404
         response.text = "Not Found"
+
 
     def test_session(self, base_url="http://testserver"):
         session = RequestsSession()
@@ -95,25 +104,39 @@ class API:
         return session
 
 
+    # templates
+    def template(self, template_name, context=None):
+        if context is None:
+            context = {}
+        return self.templates_env.get_template(template_name).render(**context)
+
+    # exception handler method
+    def add_exception_handler(self, exception_handler):
+        self.exception_handler = exception_handler
+
+    # add new middlewares
+    def add_middleware(self, middleware_cls):
+        self.middleware.add(middleware_cls)
 
 
 
-        
-# class API:
-#     def __call__(self, environ, start_response):
-#         request = Request(environ)
+'''  
 
-#         response = Response()
-#         response.text = "Hello, World!"
+class API:
+    def __call__(self, environ, start_response):
+        request = Request(environ)
 
-#         return response(environ, start_response)
+        response = Response()
+        response.text = "Hello, World!"
+
+        return response(environ, start_response)
 
 
-# class API:
-#     def __call__(self, environ, start_response):
-#         response_body = b"Hello, World!"
-#         status = '200 OK'
-#         start_response(status, headers=[])
-#         return iter([response_body])
+class API:
+    def __call__(self, environ, start_response):
+        response_body = b"Hello, World!"
+        status = '200 OK'
+        start_response(status, headers=[])
+        return iter([response_body])
 
-        
+''' 

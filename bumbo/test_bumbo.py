@@ -1,12 +1,71 @@
 
 import pytest
+from webob import response
+from middleware import Middleware
+
 from api import API
+
+FILE_DIR = "css"
+FILE_NAME = "main.css"
+FILE_CONTENTS = "body {background-color: red}"
+
+def test_middleware_methods_are_called(api, client):
+    process_request_called = False
+    process_response_called = False
+
+    class CallMiddlewareMethods(Middleware):
+        def __init__(self, app):
+            super().__init__(app)
+        
+        def process_request(self, req):
+            nonlocal process_request_called
+            process_response_called = True
+
+        def process_response(self, req):
+            nonlocal process_response_called
+            process_response_called = True
+
+    api.add_middleware(CallMiddlewareMethods)
+
+    @api.route('/')
+    def index(req, res):
+        res.text = "YOLO"
+
+    client.get('http://testserver/')
+
+    assert process_request_called is True
+    assert process_request_called is True
+
+    
+# helpers
+def _create_static(static_dir):
+    asset = static_dir.mkdir(FILE_DIR).join(FILE_NAME)
+    asset.write(FILE_CONTENTS)
+
+    return asset 
+   
+# tests
+def test_assets_are_served(tmpdir_factory):
+    static_dir = tmpdir_factory.mktemp("static")
+    _create_static(static_dir)
+    api = API(static_dir=str(static_dir))
+    client = api.test_session()
+
+    response = client.get(f"http://testserver/{FILE_DIR}/{FILE_NAME}")
+
+    assert response.status_code == 200
+    assert response.text == FILE_CONTENTS
+
+def test_404_is_returned_for_nonexistent_static_file(client):
+    assert client.get(f"http://testserver/main.css)").status_code == 404
+
 
 def test_custom_exeption_handler(api, client):
     def on_exception(req, resp, exc):
         resp.text = "AttributeErrorHappend"
 
     api.add_exception_handler(on_exception)
+
 
 def test_template(api, client):
     @api.route("/html")

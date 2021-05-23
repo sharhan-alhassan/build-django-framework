@@ -339,3 +339,13 @@ Here's an example of how to create and configure a new `Environment`:
 -  In the `api.py` of the `template` method, you'd notice `context=None`.
 
 - This should be fairly straightforward, right? The only thing you may be wondering about is why I gave context a default value of None, checked if it is None, and then set the value to an empty dictionary, {}? Why not just give it a default value of {} in the declaration? Well, dict is a mutable object and it is a bad practice to set a mutable object as a default value in Python. You can read more about this [here](https://docs.python-guide.org/writing/gotchas/#mutable-default-arguments). This is an excellent, and frequently asked, interview question for Pythonistas.
+
+
+### Middleware:
+- Basically, middleware is a component that can modify an HTTP request and/or response and is designed to be chained together to form a pipeline of behavioral changes during request processing. Examples of middleware tasks are request logging and HTTP authentication. The main point is that neither of these are fully responsible for responding to a client. Instead, each middleware changes the behavior in some way as part of the pipeline, leaving the actual response to come from something later in the pipeline. In our case, that something which actually responds to a client is our request handlers. Middlewares are wrappers around our WSGI app that have the ability to modify requests and responses.
+
+- From the bird's eye view, the code will look like this:
+
+    FirstMiddleware(SecondMiddlware(our_wsgi_app))
+
+- So, when a request comes in, it hits `FirstMiddleware` first, which modifies the request in some way and sends it over to `SecondMiddleware`. `SecondMiddleware` then modifies the request and sends it over to `our_wsgi_app`. The app handles the request, prepares the response and sends it back to `SecondMiddleware`. It can modify the response if it wants before sending it back to `FirstMiddleware`. The response is modified again, and then `FirstMiddleware` sends it back to the web server `(e.g., Gunicorn)`.

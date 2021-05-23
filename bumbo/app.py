@@ -1,27 +1,9 @@
 # app.py
 
 from api import API
+from middleware import Middleware
 
 app = API()
-
-# exception handler 
-def custom_exception_handler(request, response, exception_cls):
-    response.txt = str(exception_cls)
-
-app.add_exception_handler(custom_exception_handler)
-
-@app.route('/exception')
-def exception_throwing_handler(request, response):
-    raise AssertionError("This handler should not be used")
-
-
-# templates handler
-@app.route("/template")
-def template_handler(req, resp):
-    resp.body = app.template(
-        "index.html",
-        context = {"title": "Awesome Framework", "name": "Bumbo"}
-    ).encode()
 
 
 # function based handlers --Flask-like routes
@@ -41,15 +23,34 @@ def greeting(request, response, name):
 def get_age(request, response, age):
     response.text = f"I am {age} years old"
 
+# templates handler
+@app.route("/template")
+def template_handler(req, resp):
+    resp.body = app.template(
+        "index.html",
+        context = {"title": "Awesome Framework", "name": "Bumbo"}
+    ).encode()
 
-# function-based handlers --with Django-like routes
+@app.route('/exception')
+def exception_throwing_handler(request, response):
+    raise AssertionError("This handler should not be used")
+
+# exception handler 
+def custom_exception_handler(request, response, exception_cls):
+    response.txt = str(exception_cls)
+
+app.add_exception_handler(custom_exception_handler)
+
+
+
+# Django-like handlers
 def handler(req, resp):
     resp.text = "sample"
 
 app.add_route("/sample", handler)
 
 
-# class based handler
+# class-based handlers
 @app.route('/book')
 class BookResource:
     def get(self, req, resp):
@@ -67,3 +68,15 @@ class PutBook:
 class DeleteBook:
     def delete(self, req, resp, id):
         resp.text = f"Book with id {id} is deleted!"
+
+
+# simpple custom middleware
+class SimpleCustomMiddleware(Middleware):
+    def process_request(self, req):
+        print("Processing request", req.url)
+
+    def procss_response(self, req, res):
+        print("Processing response", req.url)
+
+app.add_middleware(SimpleCustomMiddleware)
+
